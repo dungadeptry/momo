@@ -1,0 +1,18 @@
+{
+    "name": "gadev/momo",
+    "description": "api momo",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Gadev\\Momo\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Nguyễn Tiến Dũng",
+            "email": "1stnguyendung@gmail.com"
+        }
+    ],
+    "require": {}
+}
