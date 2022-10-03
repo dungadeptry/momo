@@ -8,11 +8,9 @@
             "Gadev\\Momo\\": "src/"
         }
     },
-    "authors": [
-        {
-            "name": "Nguyễn Tiến Dũng",
-            "email": "1stnguyendung@gmail.com"
-        }
-    ],
+    "authors": [{
+        "name": "Nguyễn Tiến Dũng",
+        "email": "1stnguyendung@gmail.com"
+    }],
     "require": {}
 }
