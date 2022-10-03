@@ -12,5 +12,7 @@
         "name": "Nguyễn Tiến Dũng",
         "email": "1stnguyendung@gmail.com"
     }],
-    "require": {}
+    "require": {
+        "vendor/package": "1.3.2"
+    }
 }
