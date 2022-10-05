@@ -94,7 +94,7 @@ class Momo
         $this->time = $this->microtime();
         $this->device = $device['device'];
         $this->hardware = $device['hardware'];
-        $this->SECUREID = $device['SECUREID'];
+        $this->SECUREID = $this->get_SECUREID();
         $this->rkey = $this->generateRandom(20);
         $this->AAID = $this->generateUUID();
         $this->TOKEN = $this->get_TOKEN();
@@ -342,5 +342,21 @@ class Momo
     public function get_TOKEN()
     {
         return $this->generateRandom(22) . ':' . $this->generateRandom(9) . '-' . $this->generateRandom(20) . '-' . $this->generateRandom(12) . '-' . $this->generateRandom(7) . '-' . $this->generateRandom(7) . '-' . $this->generateRandom(53) . '-' . $this->generateRandom(9) . '_' . $this->generateRandom(11) . '-' . $this->generateRandom(4);
+    }
+
+    /**
+     * Tạo random SECUREID length
+     * 
+     * @return string
+     */
+    public function get_SECUREID($length = 17)
+    {
+        $characters = '0123456789abcdef';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        }
+        return $randomString;
     }
 }
