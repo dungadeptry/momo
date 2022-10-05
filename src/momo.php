@@ -92,7 +92,7 @@ class Momo
         $this->password = $password;
         $this->imei = $this->generateUUID();
         $this->time = $this->microtime();
-        $this->device = $device;
+        $this->device = $device['device'];
         $this->hardware = $device['hardware'];
         $this->SECUREID = $device['SECUREID'];
         $this->rkey = $this->generateRandom(20);
