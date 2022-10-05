@@ -66,6 +66,12 @@ class Momo
      */
     private string $MODELID;
 
+    /**
+     * @var string $keys
+     */
+    private string $keys;
+
+
 
     private array $msgType = [
         "SEND_OTP_MSG" => "https://api.momo.vn/backend/otp-app/public/SEND_OTP_MSG",
@@ -80,20 +86,20 @@ class Momo
     ];
 
 
-    public function __construct(string $phone, string $password, string $device, string $hardware, string $facture, string $SECUREID, string $MODELID)
+    public function __construct(string $phone, string $password, array $device)
     {
         $this->phone = $phone;
         $this->password = $password;
         $this->imei = $this->generateUUID();
         $this->time = $this->microtime();
         $this->device = $device;
-        $this->hardware = $hardware;
-        $this->SECUREID = $SECUREID;
+        $this->hardware = $device['hardware'];
+        $this->SECUREID = $device['SECUREID'];
         $this->rkey = $this->generateRandom(20);
         $this->AAID = $this->generateUUID();
         $this->TOKEN = $this->get_TOKEN();
-        $this->MODELID = $MODELID;
-        $this->facture = $facture;
+        $this->MODELID = $device['MODELID'];
+        $this->facture = $device['facture'];
     }
 
     /**
