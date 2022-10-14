@@ -86,20 +86,20 @@ class Momo
     ];
 
 
-    public function __construct(string $phone, string $password, array $device)
+    public function __construct(string $phone, string $password, array $info)
     {
         $this->phone = $phone;
         $this->password = $password;
-        $this->imei = $this->generateUUID();
+        $this->imei = !empty($info['imei']) ? $this->generateUUID() : $info['imei'];
         $this->time = $this->microtime();
-        $this->device = $device['device'];
-        $this->hardware = $device['hardware'];
-        $this->SECUREID = $this->get_SECUREID();
-        $this->rkey = $this->generateRandom(20);
-        $this->AAID = $this->generateUUID();
-        $this->TOKEN = $this->get_TOKEN();
-        $this->MODELID = $device['MODELID'];
-        $this->facture = $device['facture'];
+        $this->device = $info['device'];
+        $this->hardware = $info['hardware'];
+        $this->SECUREID = !empty($info['SECUREID']) ? $this->get_SECUREID() : $info['SECUREID'];
+        $this->rkey = !empty($info['rkey']) ? $this->generateRandom(20) : $info['rkey'];
+        $this->AAID = !empty($info['AAID']) ? $this->generateUUID() : $info['AAID'];
+        $this->TOKEN = !empty($info['TOKEN']) ? $this->get_TOKEN() : $info['TOKEN'];
+        $this->MODELID = $info['MODELID'];
+        $this->facture = $info['facture'];
     }
 
     /**
@@ -167,6 +167,12 @@ class Momo
                 'checkSum' => '',
             ),
         );
+
+        // $response = $this->CURL_MOMO("SEND_OTP_MSG", $header, $body);
+
+        // $res = json_decode($response);
+
+        // if ($res)
 
         return $this->CURL_MOMO("SEND_OTP_MSG", $header, $body);
     }
