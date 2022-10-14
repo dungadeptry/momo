@@ -71,12 +71,40 @@ class Momo
      */
     private string $keys;
 
+    /**
+     * @var string $setupKeyDecrypt
+     */
+    private string $setupKeyDecrypt;
+
+    /**
+     * @var string $sessionkey
+     */
+    private string $sessionkey;
+
+    /**
+     * @var string $agent_id
+     */
+    private string $agent_id;
+
+    /**
+     * @var string $authorization
+     */
+    private string $authorization;
+
+    /**
+     * @var string $refreshToken
+     */
+    private string $refreshToken;
+
 
 
     private array $msgType = [
         "SEND_OTP_MSG" => "https://api.momo.vn/backend/otp-app/public/SEND_OTP_MSG",
         "REG_DEVICE_MSG" => "https://api.momo.vn/backend/otp-app/public/REG_DEVICE_MSG",
         "USER_LOGIN_MSG" => "https://owa.momo.vn/public/login",
+        "CHECK_USER_BE_MSG" => "https://api.momo.vn/backend/auth-app/public/CHECK_USER_BE_MSG",
+        "QUERY_TRAN_HIS_MSG_NEW" => "https://m.mservice.io/hydra/v2/user/noti",
+        "GENERATE_TOKEN_AUTH_MSG" => "https://api.momo.vn/backend/auth-app/public/GENERATE_TOKEN_AUTH_MSG",
     ];
 
 
@@ -86,20 +114,11 @@ class Momo
     ];
 
 
-    public function __construct(string $phone, string $password, array $info)
+    public function __construct(string $phone, string $password)
     {
         $this->phone = $phone;
         $this->password = $password;
-        $this->imei = !empty($info['imei']) ? $this->generateUUID() : $info['imei'];
-        $this->time = $this->microtime();
-        $this->device = $info['device'];
-        $this->hardware = $info['hardware'];
-        $this->SECUREID = !empty($info['SECUREID']) ? $this->get_SECUREID() : $info['SECUREID'];
-        $this->rkey = !empty($info['rkey']) ? $this->generateRandom(20) : $info['rkey'];
-        $this->AAID = !empty($info['AAID']) ? $this->generateUUID() : $info['AAID'];
-        $this->TOKEN = !empty($info['TOKEN']) ? $this->get_TOKEN() : $info['TOKEN'];
-        $this->MODELID = $info['MODELID'];
-        $this->facture = $info['facture'];
+        $this->time = $this->microtime() . '000000';
     }
 
     /**
@@ -109,6 +128,7 @@ class Momo
      */
     public function sendOTP()
     {
+
         $header = array(
             "agent_id: undefined",
             "sessionkey:",
@@ -168,12 +188,6 @@ class Momo
             ),
         );
 
-        // $response = $this->CURL_MOMO("SEND_OTP_MSG", $header, $body);
-
-        // $res = json_decode($response);
-
-        // if ($res)
-
         return $this->CURL_MOMO("SEND_OTP_MSG", $header, $body);
     }
 
@@ -184,7 +198,8 @@ class Momo
      */
     public function verifyOTP($otp)
     {
-        $oHash = hash('sha256', $this->phone . $this->imei . $otp);
+
+        $oHash = hash('sha256', $this->phone . $this->rkey . $otp);
 
         $header = array(
             "agent_id: undefined",
@@ -242,6 +257,215 @@ class Momo
             )
         );
         return $this->CURL_MOMO("REG_DEVICE_MSG", $header, $body);
+    }
+
+    /**
+     * Đăng nhập momo
+     *
+     * @return bool|string
+     */
+    public function loginMomo()
+    {
+        $header = array(
+            "agent_id: " . $this->agent_id,
+            "user_phone: " . $this->phone,
+            "sessionkey: " . (!empty($this->sessionkey)) ? $this->sessionkey : "",
+            "authorization: Bearer " . $this->authorization,
+            "msgtype: USER_LOGIN_MSG",
+            "Host: owa.momo.vn",
+            "user_id: " . $this->phone,
+            "User-Agent: okhttp/3.14.17",
+            "app_version: " . $this->momoConfig["appVer"],
+            "app_code: " . $this->momoConfig["appCode"],
+            "device_os: Android"
+        );
+        $body = array(
+            'user' => $this->phone,
+            'msgType' => 'USER_LOGIN_MSG',
+            'pass' => $this->password,
+            'cmdId' => $this->time,
+            'lang' => 'vi',
+            'time' => $this->time,
+            'channel' => 'APP',
+            'appVer' => $this->momoConfig["appVer"],
+            'appCode' => $this->momoConfig["appCode"],
+            'deviceOS' => 'ANDROID',
+            'buildNumber' => 0,
+            'appId' => 'vn.momo.platform',
+            'result' => true,
+            'errorCode' => 0,
+            'errorDesc' => '',
+            'momoMsg' =>
+            array(
+                '_class' => 'mservice.backend.entity.msg.LoginMsg',
+                'isSetup' => false,
+            ),
+            'extra' =>
+            array(
+                'pHash' => $this->get_pHash(),
+                'AAID' => $this->AAID,
+                'IDFA' => '',
+                'TOKEN' => $this->TOKEN,
+                'SIMULATOR' => '',
+                'SECUREID' => $this->SECUREID,
+                'MODELID' => $this->MODELID,
+                'checkSum' => $this->generateCheckSum('USER_LOGIN_MSG', $this->time),
+            ),
+        );
+        return $this->CURL_MOMO("USER_LOGIN_MSG", $header, $body);
+    }
+
+    /**
+     * Kiểm tra tên người dùng momoMsg
+     * 
+     * @return bool|string
+     */
+    public function checkHistoryMomo($hours)
+    {
+        $begin = (time() - (3600 * $hours)) * 1000;
+        $header = array(
+            "authorization: Bearer " . $this->authorization,
+            "user_phone: " . $this->phone,
+            "sessionkey: " . $this->sessionkey,
+            "agent_id: " . $this->agent_id,
+            'app_version: ' . $this->momoConfig["appVer"],
+            'app_code: ' . $this->momoConfig["appCode"],
+            "Host: m.mservice.io"
+        );
+        $body = '{
+            "userId": "' . $this->phone . '",
+            "fromTime": ' . $begin . ',
+            "toTime": ' . $this->microtime() . ',
+            "limit": 50,
+            "cursor": "",
+            "cusPhoneNumber": ""
+        }';
+
+        $result = $this->CURL_MOMO("QUERY_TRAN_HIS_MSG_NEW", $header, $body);
+        $result = json_decode($result, true);
+        if (!is_array($result)) {
+            return array(
+                "status" => "error",
+                "code" => -5,
+                "message" => "Hết thời gian truy cập vui lòng đăng nhập lại"
+            );
+        }
+        $tranHisMsg = $result["message"]["data"]["notifications"];
+        $return = array();
+        foreach ($tranHisMsg as $value) {
+            if ($value["refId"] == 'receive_money_p2p' || $value["refId"] == 'LuckyMoneyPreviewDetail') {
+                $extra = json_decode($value["extra"], true);
+                $amount = $value['caption'];
+                $name = explode("từ", $amount)[1] ?: "";
+                if (strpos($amount, "Nhận") !== false && $name) {
+                    preg_match('#Nhận (.+?)đ#is', $amount, $amount);
+                    $amount = str_replace(".", "", $amount[1]) > 0 ? str_replace(".", "", $amount[1]) : '0';
+                    $comment = $value['body'];
+                    $comment = ltrim($comment, '"');
+                    $comment = explode('"', $comment);
+                    $comment = $comment[0];
+                    if ($comment == "Nhấn để xem chi tiết.") {
+                        $comment = "";
+                    }
+                    $return[] = array(
+                        "tranId" => $value["tranId"],
+                        "ID" => $value["ID"],
+                        "patnerID" => $value["sender"],
+                        "partnerName" => trim($name),
+                        "comment" => $comment,
+                        "amount" => (int)$amount,
+                        "millisecond" => $value["time"]
+                    );
+                }
+            }
+        }
+        return array('status' => 'success', 'data' => $return);
+    }
+
+    /**
+     * Lấy lại token đăng nhập
+     * 
+     * @return bool|string
+     */
+    public function refreshTokenMomo() {
+        $header = array(
+            "agent_id: " . $this->agent_id,
+            "user_phone: " . $this->phone,
+            "sessionkey: " . (!empty($this->sessionkey)) ? $this->sessionkey : "",
+            "authorization: Bearer " . $this->authorization,
+            "msgtype: GENERATE_TOKEN_AUTH_MSG",
+            "Host: api.momo.vn",
+            "user_id: " . $this->phone,
+            "User-Agent: MoMoPlatform-Release/31062 CFNetwork/1325.0.1 Darwin/21.1.0",
+            "app_version: " . $this->momoConfig["appVer"],
+            "app_code: " . $this->momoConfig["appCode"],
+            "device_os: Android"
+        );
+        $body = array(
+            'user' => $this->phone,
+            'msgType' => 'GENERATE_TOKEN_AUTH_MSG',
+            'cmdId' => $this->time,
+            'lang' => 'vi',
+            'time' => $this->time,
+            'channel' => 'APP',
+            'appVer' => $this->momoConfig["appVer"],
+            'appCode' => $this->momoConfig["appCode"],
+            'deviceOS' => 'ANDROID',
+            'buildNumber' => 0,
+            'appId' => 'vn.momo.platform',
+            'result' => true,
+            'errorCode' => 0,
+            'errorDesc' => '',
+            'momoMsg' =>
+                array(
+                    '_class' => 'mservice.backend.entity.msg.RefreshTokenMsg',
+                    'refreshToken' => $this->refreshToken,
+                ),
+            'extra' =>
+                array(
+                    'pHash' => $this->get_pHash(),
+                    'AAID' => $this->AAID,
+                    'IDFA' => '',
+                    'TOKEN' => $this->TOKEN,
+                    'SIMULATOR' => '',
+                    'SECUREID' => $this->SECUREID,
+                    'MODELID' => $this->MODELID,
+                    'checkSum' => $this->generateCheckSum('GENERATE_TOKEN_AUTH_MSG', $this->time),
+                ),
+        );
+        return $this->CURL_MOMO("GENERATE_TOKEN_AUTH_MSG", $header, $body);
+    }
+
+    /**
+     * Tạo info mới cho momo
+     *
+     * @return bool|string
+     */
+    public function generateInfo()
+    {
+        return json_encode(array(
+            'message' => 'Lấy info momo thành công',
+            'data' => array(
+                'phone' => $this->phone,
+                'password' => $this->password,
+                'imei' => $this->generateUUID(),
+                'device' => $this->randomDevice()['device'],
+                'hardware' => $this->randomDevice()['hardware'],
+                'MODELID' => $this->randomDevice()['MODELID'],
+                'facture' => $this->randomDevice()['facture'],
+                'SECUREID' => $this->get_SECUREID(),
+                'rkey' => $this->generateRandom(20),
+                'AAID' => $this->generateUUID(),
+                'TOKEN' => $this->get_TOKEN(),
+            )
+        ));
+    }
+
+    public function changeInfo($info)
+    {
+        foreach ($info as $key => $value) {
+            $this->$key = $value;
+        }
     }
 
     /**
@@ -311,6 +535,20 @@ class Momo
         );
     }
 
+    public function generateCheckSum($type, $microtime)
+    {
+        $Encrypt = $this->phone . $microtime . '000000' . $type . ($microtime / 1000000000000.0) . 'E12';
+        $iv = pack('C*', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        return base64_encode(openssl_encrypt($Encrypt, 'AES-256-CBC', $this->setupKeyDecrypt, OPENSSL_RAW_DATA, $iv));
+    }
+
+    private function get_pHash()
+    {
+        $key = $this->imei . "|" . $this->password;
+        $iv = pack('C*', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        return base64_encode(openssl_encrypt($key, 'AES-256-CBC', $this->setupKeyDecrypt, OPENSSL_RAW_DATA, $iv));
+    }
+
 
     /**
      * Tạo microtime
@@ -364,5 +602,29 @@ class Momo
             $randomString .= $characters[rand(0, $charactersLength - 1)];
         }
         return $randomString;
+    }
+
+    public function randomDevice()
+    {
+        $data = array(
+            array('device' => 'SM-G532F', 'hardware' => 'mt6735', 'facture' => 'samsung', 'MODELID' => 'samsung sm-g532gmt6735r58j8671gsw'),
+            array('device' => 'SM-A102U', 'hardware' => 'a10e', 'facture' => 'Samsung', 'MODELID' => 'Samsung SM-A102U'),
+            array('device' => 'SM-A305FN', 'hardware' => 'a30', 'facture' => 'Samsung', 'MODELID' => 'Samsung SM-A305FN'),
+            array('device' => 'HTC One X9 dual sim', 'hardware' => 'htc_e56ml_dtul', 'facture' => 'HTC', 'MODELID' => 'HTC One X9 dual sim'),
+            array('device' => 'HTC 7060', 'hardware' => 'cp5dug', 'facture' => 'HTC', 'MODELID' => 'HTC HTC_7060'),
+            array('device' => 'HTC D10w', 'hardware' => 'htc_a56dj_pro_dtwl', 'facture' => 'HTC', 'MODELID' => 'HTC htc_a56dj_pro_dtwl'),
+            array('device' => 'Oppo realme X Lite', 'hardware' => 'RMX1851CN', 'facture' => 'Oppo', 'MODELID' => 'Oppo RMX1851'),
+            array('device' => 'MI 9', 'hardware' => 'equuleus', 'facture' => 'Xiaomi', 'MODELID' => 'Xiaomi equuleus'),
+        );
+
+        // $device = mt_rand(0, count($data) - 1);
+
+        return $data[rand(0, count($data) - 1)];
+    }
+
+    public function get_setupKey($setUpKey, $ohash)
+    {
+        $iv = pack('C*', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        return openssl_decrypt(base64_decode($setUpKey), 'AES-256-CBC', $ohash, OPENSSL_RAW_DATA, $iv);
     }
 }
