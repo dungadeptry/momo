@@ -4,7 +4,7 @@
 require_once 'vendor/autoload.php';
 
 
-$momo = new Gadev\Momo\Momo('0564744920', '999999');
+$momo = new Gadev\Momo\Momo($phone, $password);
 
 // $info = $momo->generateInfo();
 // $info = json_encode(json_decode($info)->data);
@@ -14,11 +14,10 @@ $infoPhone = file_get_contents('0564744920.json');
 $info = json_decode($infoPhone, true);
 
 
-// $momo->changeInfo($info);
 
 // var_dump($momo->sendOTP());
 
-// $otp = '5938';
+// $otp = '7139';
 
 // $result = $momo->verifyOTP($otp);
 
@@ -43,6 +42,8 @@ $info = json_decode($infoPhone, true);
 // $dataNew['agent_id'] = "";
 // $dataNew['sessionkey'] = "";
 // $dataNew['authorization'] = "";
+
+// $momo->changeInfo($dataNew);
 
 
 // $result = $momo->loginMomo();
@@ -81,4 +82,46 @@ $info = json_decode($infoPhone, true);
 // $dataNew['authorization'] = json_decode($result)->extra->AUTH_TOKEN;
 // $dataNew['RSA_PUBLIC_KEY'] = json_decode($result)->extra->REQUEST_ENCRYPT_KEY;
 
+// file_put_contents('0564744920.json', json_encode($dataNew));
 
+/** LẤY THÔNG TIN TÊN MOMO */
+
+$momo->changeInfo($info);
+$result = $momo->checkMoney();
+
+$json = json_decode($result, true);
+
+$first = $json['momoMsg']['transactions'][0];
+
+// foreach($json['momoMsg']['transactions'] as $gadev) {
+//     if ($gadev == reset($array)) {
+//         echo 'AAA';
+//     }
+// }
+// var_dump($first['moneySourceAmount']);
+
+// if (empty(json_decode($result)->errorCode)) {
+//     $receiver = array(
+//         'comment' => 'test',
+//         'amount' => 100,
+//         'receiver' => '0564744920',
+//         'partnerName' => json_decode($result)->extra->NAME
+//     );
+
+//     $resultCreateTransferMoney = $momo->createTransferMoney($receiver);
+
+
+//     $id = json_decode($resultCreateTransferMoney, true)['momoMsg']['replyMsgs'][0]['ID'];
+
+
+//     $resultComfirmTransfer = $momo->transferMoney($id, $receiver);
+
+//     var_dump($resultComfirmTransfer);
+// }
+
+// foreach($info as $key => $value) {
+//     $dataNew[$key] = $value;
+// }
+
+// $dataNew['authorization'] = json_decode($result)->extra->AUTH_TOKEN;
+// $dataNew['RSA_PUBLIC_KEY'] = json_decode($result)->extra->REQUEST_ENCRYPT_KEY;
